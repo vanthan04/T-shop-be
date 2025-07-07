@@ -1,0 +1,35 @@
+# Thiết lập mặc định cho text file (git tự detect)
+* text=auto
+
+# Các file code/config dùng LF
+*.java          text eol=lf
+*.js            text eol=lf
+*.json          text eol=lf
+*.xml           text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.sql           text eol=lf
+*.sh            text eol=lf
+*.env           text eol=lf
+*.env.example   text eol=lf
+*.gitignore     text eol=lf
+.gitattributes  text eol=lf
+docker-compose.yml text eol=lf
+
+# Các file IDE config (xml, iml) dùng LF
+.idea/*.xml     text eol=lf
+.idea/*.iml     text eol=lf
+.idea/.gitignore text eol=lf
+
+# Các file Windows script/batch dùng CRLF
+*.cmd           text eol=crlf
+*.bat           text eol=crlf
+*.ps1           text eol=crlf
+mvnw.cmd        text eol=crlf
+
+# Giữ nguyên nhị phân
+*.png           binary
+*.jpg           binary
+*.gif           binary
+*.exe           binary
+*.dll           binary

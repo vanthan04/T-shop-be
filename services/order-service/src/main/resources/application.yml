@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: jdbc:postgresql://localhost:5555/product_service
+    username: postgres
+    password: 1234
+    driver-class-name: org.postgresql.Driver
+
+server:
+  port: 8005
