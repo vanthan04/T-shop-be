@@ -15,7 +15,7 @@ public class HandleEvent {
     private final CartRepository cartRepository;
 
     @KafkaListener(topics = "userCreated", groupId = "cartGroup")
-    private void handleUserCreated(UserCreatedEvent userCreatedEvent){
+    public void handleUserCreated(UserCreatedEvent userCreatedEvent){
         System.out.println(userCreatedEvent);
         CartModel cartModel = new CartModel(
                 userCreatedEvent.getUserId(),

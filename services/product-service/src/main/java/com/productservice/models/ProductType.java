@@ -27,9 +27,6 @@ public class ProductType {
     @JsonManagedReference
     private List<Product> products;
 
-    @OneToMany(mappedBy = "productType", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
-    private List<ProductSpecAttribute> productSpecAttributes;
 
     public ProductType(UUID typeId, String typeName) {
         this.typeId = typeId;

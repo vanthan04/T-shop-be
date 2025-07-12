@@ -30,7 +30,7 @@ public class InventoryHistoryModel {
     @Column(name = "action_type", length = 50, nullable = false)
     private InventoryActionType actionType;
 
-    @Column(name = "order_id", nullable = false)
+    @Column(name = "order_id")
     private UUID orderId;
 
     @Column(name = "action_date", nullable = false)

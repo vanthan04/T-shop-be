@@ -23,7 +23,7 @@ public class OrderController {
         List<OrderModel> orderList = orderService.getAllOrders();
         return new ApiResponse<>(true, "Lay danh sach don hang thanh cong", orderList);
     }
-    @PostMapping("/checkout")
+    @PostMapping("")
     public ApiResponse<OrderModel> createOrder(@RequestBody OrderRequest request) {
         OrderModel order =  orderService.checkoutOrder(request);
         return new ApiResponse<>(true, "Tạo đơn hàng thành công", order) ;

@@ -44,7 +44,7 @@ public class VerifiedWithRolesAuthorizationManager implements ReactiveAuthorizat
                         // chỉ khi là user (không phải admin), mới cần verified
                         Object principal = auth.getPrincipal();
                         if (principal instanceof Jwt jwt) {
-                            verified = Boolean.TRUE.equals(jwt.getClaim("verified"));
+                            verified = Boolean.TRUE.equals(jwt.getClaim("email_verified"));
                         }
                     }
 

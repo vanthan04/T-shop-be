@@ -25,7 +25,7 @@ public class HandleEvent {
 
     @Transactional
     @KafkaListener(topics = "productCreated", groupId = "productGroup")
-    protected void createRecordInventory(ProductCreatedEvent productCreatedEvent){
+    public void createRecordInventory(ProductCreatedEvent productCreatedEvent){
 
         System.out.println(productCreatedEvent);
         InventoryModel inventoryModel = new InventoryModel(

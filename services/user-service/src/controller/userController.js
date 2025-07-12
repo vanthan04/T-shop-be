@@ -4,27 +4,27 @@ const UserInfo = require("../models/userModel");
 const getUserByUserId = async (userId) => {
     return await UserInfo.findOne({ where: { userId } });
 };
-
-// Tạo user mới
-const addUser = async (req, res) => {
-    const { userId, phone, address } = req.body;
-
-    if (!userId || !phone || !address) {
-        return res.status(400).json({
-            success: false,
-            message: "Thiếu thông tin bắt buộc!",
-            dataResponse: null,
-        });
-    }
-
-    const newUser = await UserInfo.create({ userId, phone, address });
-
-    return res.status(200).json({
-        success: true,
-        message: "Thêm thông tin user thành công!",
-        dataResponse: newUser,
-    });
-};
+//
+// // Tạo user mới
+// const addUser = async (req, res) => {
+//     const { userId, phone, address } = req.body;
+//
+//     if (!userId || !phone || !address) {
+//         return res.status(400).json({
+//             success: false,
+//             message: "Thiếu thông tin bắt buộc!",
+//             dataResponse: null,
+//         });
+//     }
+//
+//     const newUser = await UserInfo.create({ userId, phone, address });
+//
+//     return res.status(200).json({
+//         success: true,
+//         message: "Thêm thông tin user thành công!",
+//         dataResponse: newUser,
+//     });
+// };
 
 // Lấy user theo ID
 const getUserById = async (req, res) => {
@@ -193,7 +193,6 @@ const deleteAddress = async (req, res) => {
 };
 
 module.exports = {
-    addUser,
     getUserById,
     updateUserById,
     addAddress,
