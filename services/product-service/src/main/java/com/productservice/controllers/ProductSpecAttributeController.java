@@ -22,18 +22,18 @@ public class ProductSpecAttributeController {
 
     @GetMapping
     public ApiResponse<List<ProductSpecAttribute>> getAll() {
-        return new ApiResponse<>(200, "Lấy danh sách thành công", attributeService.getAllAttributes());
+        return new ApiResponse<>(true, "Lấy danh sách thành công", attributeService.getAllAttributes());
     }
 
     @GetMapping("/{id}")
     public ApiResponse<ProductSpecAttribute> getById(@PathVariable UUID id) {
-        return new ApiResponse<>(200, "Lấy thành công", attributeService.getAttributeById(id));
+        return new ApiResponse<>(true, "Lấy thành công", attributeService.getAttributeById(id));
     }
 
     @PostMapping
     public ApiResponse<ProductSpecAttribute> create(@RequestBody CreateSpecAttributeRequest request) {
         return new ApiResponse<>(
-                200,
+                true,
                 "Tạo thành công",
                 attributeService.createAttribute(
                         request.getTypeId(),
@@ -47,7 +47,7 @@ public class ProductSpecAttributeController {
     public ApiResponse<ProductSpecAttribute> update(@PathVariable UUID id,
                                                     @RequestBody UpdateSpecAttributeRequest request) {
         return new ApiResponse<>(
-                200,
+                true,
                 "Cập nhật thành công",
                 attributeService.updateAttribute(
                         id,
@@ -60,6 +60,6 @@ public class ProductSpecAttributeController {
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable UUID id) {
         attributeService.deleteAttribute(id);
-        return new ApiResponse<>(200, "Xoá thành công", null);
+        return new ApiResponse<>(true, "Xoá thành công", null);
     }
 }

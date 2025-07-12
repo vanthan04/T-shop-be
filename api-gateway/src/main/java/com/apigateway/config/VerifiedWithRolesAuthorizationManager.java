@@ -1,7 +1,5 @@
 package com.apigateway.config;
 
-import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.context.annotation.Bean;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
 import org.springframework.security.core.Authentication;
@@ -11,7 +9,6 @@ import org.springframework.security.web.server.authorization.AuthorizationContex
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Map;
 
 public class VerifiedWithRolesAuthorizationManager implements ReactiveAuthorizationManager<AuthorizationContext> {
     private final List<String> requiredRoles;
@@ -25,23 +22,35 @@ public class VerifiedWithRolesAuthorizationManager implements ReactiveAuthorizat
         return authentication
                 .filter(Authentication::isAuthenticated)
                 .map(auth -> {
-                    // Check verified
-                    Object detailsObj = auth.getDetails();
-                    boolean verified = false;
-                    if (detailsObj instanceof Map<?, ?> details) {
-                        verified = Boolean.TRUE.equals(details.get("verified"));
+                    // Lấy tất cả quyền
+                    List<String> authorities = auth.getAuthorities().stream()
+                            .map(GrantedAuthority::getAuthority)
+                            .toList();
+
+                    // Có ít nhất 1 role hợp lệ?
+                    boolean hasRole = requiredRoles.stream()
+                            .map(r -> "ROLE_" + r)
+                            .anyMatch(authorities::contains);
+
+                    // Nếu không có role nào đúng => từ chối luôn
+                    if (!hasRole) return new AuthorizationDecision(false);
+
+                    // Nếu chỉ có client_user thì mới cần kiểm tra verified
+                    boolean isUser = authorities.contains("ROLE_client_user");
+                    boolean isAdmin = authorities.contains("ROLE_client_admin");
+
+                    boolean verified = true; // mặc định true cho admin
+                    if (isUser && !isAdmin) {
+                        // chỉ khi là user (không phải admin), mới cần verified
+                        Object principal = auth.getPrincipal();
+                        if (principal instanceof Jwt jwt) {
+                            verified = Boolean.TRUE.equals(jwt.getClaim("verified"));
+                        }
                     }
 
-                    // Check role
-                    boolean hasRole = auth.getAuthorities().stream()
-                            .map(GrantedAuthority::getAuthority)
-                            .anyMatch(authStr -> requiredRoles.stream()
-                                    .map(r -> "ROLE_" + r)
-                                    .anyMatch(authStr::equals));
-
-                    return new AuthorizationDecision(verified && hasRole);
+                    return new AuthorizationDecision(verified);
                 })
                 .defaultIfEmpty(new AuthorizationDecision(false));
     }
-
 }
+

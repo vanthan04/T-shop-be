@@ -1,5 +1,6 @@
 package com.productservice.services;
 
+import com.productservice.exception.AppException;
 import com.productservice.models.Product;
 import com.productservice.models.ProductSpecAttribute;
 import com.productservice.models.ProductSpecValue;
@@ -30,10 +31,10 @@ public class ProductSpecValueService {
 
     public ProductSpecValue createValue(UUID productId, UUID attributeId, String value) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+                .orElseThrow(() -> new AppException(404, "Không tìm thấy sản phẩm"));
 
         ProductSpecAttribute attribute = attributeRepository.findById(attributeId)
-                .orElseThrow(() -> new IllegalArgumentException("Attribute not found"));
+                .orElseThrow(() -> new AppException(404, "Không tìm thấy thuộc tính"));
 
         ProductSpecValue val = new ProductSpecValue();
         val.setValueId(UUID.randomUUID());
@@ -46,13 +47,16 @@ public class ProductSpecValueService {
 
     public ProductSpecValue updateValue(UUID valueId, String newValue) {
         ProductSpecValue existing = valueRepository.findById(valueId)
-                .orElseThrow(() -> new IllegalArgumentException("Attribute value not found"));
+                .orElseThrow(() -> new AppException(404, "Không tìm thấy giá trị thuộc tính"));
 
         existing.setValue(newValue);
         return valueRepository.save(existing);
     }
 
     public void deleteValue(UUID valueId) {
+        if (!valueRepository.existsById(valueId)) {
+            throw new AppException(404, "Không tìm thấy giá trị thuộc tính để xóa");
+        }
         valueRepository.deleteById(valueId);
     }
 
@@ -62,6 +66,6 @@ public class ProductSpecValueService {
 
     public ProductSpecValue getValue(UUID valueId) {
         return valueRepository.findById(valueId)
-                .orElseThrow(() -> new IllegalArgumentException("Attribute value not found"));
+                .orElseThrow(() -> new AppException(404, "Không tìm thấy giá trị thuộc tính"));
     }
 }

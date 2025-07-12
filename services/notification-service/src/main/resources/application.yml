@@ -1,9 +1,18 @@
 spring:
   application:
     name: notification-service
-  config:
-    import: optional:configserver:http://localhost:8888
+  kafka:
+    bootstrap-servers: localhost:29092
+    template:
+      default-topic: notification-topic
 
+    consumer:
+      group-id: inventoryGroup
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+        spring.json.type.mapping: orderCreated:com.inventoryservice.event.data.OrderCreatedEvent
 server:
   port: 8007
 

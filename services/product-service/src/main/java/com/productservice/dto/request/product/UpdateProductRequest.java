@@ -12,6 +12,5 @@ public class UpdateProductRequest {
     private String productName;
     private String productDescription;
     private BigDecimal productPrice;
-    private List<String> imageUrls;
-
+    private boolean active;
 }

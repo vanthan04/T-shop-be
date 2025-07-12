@@ -1,5 +1,6 @@
 package com.productservice.services;
 
+import com.productservice.exception.AppException;
 import com.productservice.models.ProductSpecAttribute;
 import com.productservice.models.ProductType;
 import com.productservice.repositories.ProductSpecAttributeRepository;
@@ -35,7 +36,7 @@ public class ProductSpecAttributeService {
      */
     public ProductSpecAttribute getAttributeById(UUID attributeId) {
         return attributeRepository.findById(attributeId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy attribute với id " + attributeId));
+                .orElseThrow(() -> new AppException(404, "Không tìm thấy attribute với id " + attributeId));
     }
 
     /**
@@ -43,7 +44,7 @@ public class ProductSpecAttributeService {
      */
     public ProductSpecAttribute createAttribute(UUID typeId, String attributeName, String dataType) {
         ProductType productType = productTypeRepository.findById(typeId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy productType với id " + typeId));
+                .orElseThrow(() -> new AppException(404, "Không tìm thấy productType với id " + typeId));
 
         ProductSpecAttribute attribute = new ProductSpecAttribute();
         attribute.setAttributeId(UUID.randomUUID());
@@ -59,7 +60,7 @@ public class ProductSpecAttributeService {
      */
     public ProductSpecAttribute updateAttribute(UUID attributeId, String attributeName, String dataType) {
         ProductSpecAttribute attribute = attributeRepository.findById(attributeId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy attribute với id " + attributeId));
+                .orElseThrow(() -> new AppException(404, "Không tìm thấy attribute với id " + attributeId));
 
         attribute.setAttributeName(attributeName);
         attribute.setDataType(dataType);
@@ -72,7 +73,7 @@ public class ProductSpecAttributeService {
      */
     public void deleteAttribute(UUID attributeId) {
         if (!attributeRepository.existsById(attributeId)) {
-            throw new IllegalArgumentException("Không tìm thấy attribute với id " + attributeId);
+            throw new AppException(404, "Không tìm thấy attribute với id " + attributeId);
         }
         attributeRepository.deleteById(attributeId);
     }

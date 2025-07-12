@@ -5,23 +5,19 @@ const UserInfo = sequelize.define(
     "UserInfo",
     {
         userId: {
-            type: DataTypes.STRING,
+            type: DataTypes.UUID,
             allowNull: false,
             primaryKey: true,
         },
         address: {
-            type: DataTypes.STRING,
+            type: DataTypes.ARRAY(DataTypes.STRING),
         },
         phone: {
             type: DataTypes.STRING,
         },
-        isVerify: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-        },
     },
     {
-        tableName: "userinfo",
+        tableName: "user_info",
         timestamps: true,
         underscored: true,
     }

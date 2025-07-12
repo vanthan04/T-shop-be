@@ -1,5 +1,8 @@
 const axios = require("../config/axiosInstance")
 require("dotenv").config()
+const UserInfo = require("../models/userModel")
+const {sendUserCreatedEvent} = require("../event/UserCreatedEvent");
+
 
 const getAminToken = async () => {
     try {
@@ -86,13 +89,22 @@ const createNewUser = async (adminToken, userInfo, password) => {
                     message: resultSendEmail.message
                 }
             }
+
+            // Gui xong luu lai userId de cap nhat thong tin sau nay
+            await UserInfo.create({
+                userId,
+                phone: null,
+                address: [],
+            });
+
+            await sendUserCreatedEvent(userId)
+
             return {
                 success: true,
                 status: 200,
-                message: "Please check email to verify!"
+                message: "Đăng kí thành công. Vui lòng kiểm tra email để xác thực!",
+                dataResponse: {userId, ...userInfo}
             };
-
-
 
         } else {
             console.error('❌ Failed to create user:', res.status, res.data);

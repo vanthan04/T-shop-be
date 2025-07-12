@@ -1,0 +1,5 @@
+GET     /orders                     Lay toan bo don hang
+POST	/orders	                    ✅ Tạo đơn hàng
+GET	/orders/user/{userId}	        🔎 Xem lịch sử đơn của người dùng
+GET	/orders/detail/{orderId}	    📦 Xem chi tiết 1 đơn
+PATCH /orders/{orderId}/cancel        Huy don hang

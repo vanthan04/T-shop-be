@@ -17,6 +17,7 @@
           <option value="product-service" />
           <option value="product-service" />
           <option value="product-service" />
+          <option value="inventory-service" />
         </list>
       </option>
       <option name="ignoredPackages">
@@ -32,11 +33,13 @@
           <option value="commons-io:commons-io:2.11.0" />
           <option value="com.thoughtworks.xstream:xstream:1.4.20" />
           <option value="commons-configuration:commons-configuration:1.10" />
+          <option value="commons-beanutils:commons-beanutils:1.9.4" />
         </list>
       </option>
       <option name="ignoredReasons">
         <list>
           <option value="In progress" />
+          <option value="Not exploitable" />
           <option value="Not exploitable" />
           <option value="Not exploitable" />
           <option value="Not exploitable" />

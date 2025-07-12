@@ -8,4 +8,6 @@ import java.util.UUID;
 
 @Repository
 public interface ProductTypeRepository extends JpaRepository<ProductType, UUID> {
+    boolean existsByTypeNameIgnoreCase(String typeName);
+
 }

@@ -21,18 +21,18 @@ public class ProductSpecValueController {
 
     @GetMapping
     public ApiResponse<List<ProductSpecValue>> getAll() {
-        return new ApiResponse<>(200, "Lấy danh sách thành công", valueService.getAllValues());
+        return new ApiResponse<>(true, "Lấy danh sách thành công", valueService.getAllValues());
     }
 
     @GetMapping("/{id}")
     public ApiResponse<ProductSpecValue> getById(@PathVariable UUID id) {
-        return new ApiResponse<>(200, "Lấy thành công", valueService.getValue(id));
+        return new ApiResponse<>(true, "Lấy thành công", valueService.getValue(id));
     }
 
     @PostMapping
     public ApiResponse<ProductSpecValue> create(@RequestBody CreateSpecValueRequest request) {
         return new ApiResponse<>(
-                200,
+                true,
                 "Tạo thành công",
                 valueService.createValue(request.getProductId(), request.getAttributeId(), request.getValue())
         );
@@ -41,12 +41,12 @@ public class ProductSpecValueController {
     @PutMapping("/{id}")
     public ApiResponse<ProductSpecValue> update(@PathVariable UUID id,
                                                 @RequestBody String newValue) {
-        return new ApiResponse<>(200, "Cập nhật thành công", valueService.updateValue(id, newValue));
+        return new ApiResponse<>(true, "Cập nhật thành công", valueService.updateValue(id, newValue));
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable UUID id) {
         valueService.deleteValue(id);
-        return new ApiResponse<>(200, "Xoá thành công", null);
+        return new ApiResponse<>(true, "Xoá thành công", null);
     }
 }

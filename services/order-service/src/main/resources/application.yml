@@ -2,10 +2,38 @@ spring:
   application:
     name: order-service
   datasource:
-    url: jdbc:postgresql://localhost:5555/product_service
+    url: jdbc:postgresql://localhost:5555/order_service
     username: postgres
     password: 1234
     driver-class-name: org.postgresql.Driver
 
+  kafka:
+    bootstrap-servers: localhost:29092
+    template:
+      default-topic: order-topic
+    consumer:
+      group-id: orderGroup
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+        spring.json.type.mapping:
+
+    admin:
+      auto-create: true
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
 server:
-  port: 8005
+  port: 8002
+
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1

@@ -1,8 +1,31 @@
 spring:
   application:
     name: payment-service
-  config:
-    import: optional:configserver:http://localhost:8888
+  datasource:
+    url: jdbc:postgresql://localhost:5555/payment_service
+    username: postgres
+    password: 1234
+    driver-class-name: org.postgresql.Driver
 
+  kafka:
+    bootstrap-servers: localhost:29092
+    template:
+      default-topic: payment-topic
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.type.mapping: paymentStatus:com.paymentservice.event.producer.PaymentStatusEvent
+
+    admin:
+      auto-create: true
 server:
   port: 8006
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1

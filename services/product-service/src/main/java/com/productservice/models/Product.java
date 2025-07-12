@@ -30,6 +30,9 @@ public class Product {
     @Column(name = "product_price", precision = 15, scale = 2)
     private BigDecimal productPrice;
 
+    @Column(name = "active", nullable = false, columnDefinition = "boolean default true")
+    private boolean active = true;
+
     @Column(name = "image_urls", columnDefinition = "TEXT")
     private String imageUrls;
 
