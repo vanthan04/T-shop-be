@@ -24,7 +24,7 @@ public class HandleEvent {
 
 
     @Transactional
-    @KafkaListener(topics = "productCreated", groupId = "productGroup")
+    @KafkaListener(topics = "productCreated", groupId = "inventoryGroup")
     public void createRecordInventory(ProductCreatedEvent productCreatedEvent){
 
         System.out.println(productCreatedEvent);
@@ -42,6 +42,7 @@ public class HandleEvent {
                 UUID.randomUUID(),
                 inventoryModel,
                 0,
+                0,
                 InventoryActionType.INIT,
                 null,
                 LocalDateTime.now(),
@@ -50,4 +51,5 @@ public class HandleEvent {
 
         inventoryHistoryRepository.save(inventoryHistoryModel);
     }
+
 }

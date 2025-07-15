@@ -23,8 +23,11 @@ public class InventoryHistoryModel {
     @JoinColumn(name = "inventory_id", nullable = false)
     private InventoryModel inventory;
 
-    @Column(name = "change_quantity", nullable = false)
-    private int changeQuantity;
+    @Column(name = "quantity_change")
+    private Integer quantityChange;
+
+    @Column(name = "reserve_change")
+    private Integer reserveChange;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "action_type", length = 50, nullable = false)

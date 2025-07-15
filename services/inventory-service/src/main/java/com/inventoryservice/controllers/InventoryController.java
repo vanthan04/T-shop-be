@@ -4,6 +4,7 @@ import com.inventoryservice.dto.request.InventoryCreatedRequest;
 import com.inventoryservice.dto.request.InventoryManualUpdatedRequest;
 import com.inventoryservice.dto.request.InventoryReservedRequest;
 import com.inventoryservice.dto.response.ApiResponse;
+import com.inventoryservice.dto.response.EnumCode;
 import com.inventoryservice.models.InventoryHistoryModel;
 import com.inventoryservice.models.InventoryModel;
 import com.inventoryservice.services.InventoryHistoryService;
@@ -25,13 +26,13 @@ public class InventoryController {
     @PostMapping
     public ApiResponse<InventoryModel> createOrImport(@RequestBody InventoryCreatedRequest request) {
         InventoryModel inventory = inventoryService.createNewInventory(request);
-        return new ApiResponse<>(true, "Tạo hoặc nhập kho thành công", inventory);
+        return new ApiResponse<>(EnumCode.INVENTORY_CREATED, inventory);
     }
 
     @GetMapping("/{productId}")
     public ApiResponse<InventoryModel> getByProductId(@PathVariable UUID productId) {
         InventoryModel inventory = inventoryService.getInventoryByProductId(productId);
-        return new ApiResponse<>(true, "Lấy tồn kho thành công", inventory);
+        return new ApiResponse<>(EnumCode.INVENTORY_FETCHED, inventory);
     }
 
     @PutMapping("/manual-update")
@@ -41,36 +42,36 @@ public class InventoryController {
                 request.getQuantity(),
                 request.getReason()
         );
-        return new ApiResponse<>(true, "Cập nhật kho thủ công thành công", updated);
+        return new ApiResponse<>(EnumCode.INVENTORY_UPDATED, updated);
     }
 
     @DeleteMapping("/{productId}")
     public ApiResponse<Void> deleteInventory(@PathVariable UUID productId) {
         inventoryService.deleteInventory(productId);
-        return new ApiResponse<>(true, "Xóa tồn kho thành công", null);
+        return new ApiResponse<>(EnumCode.INVENTORY_DELETED, null);
     }
 
     @GetMapping("/logs/{productId}")
     public ApiResponse<List<InventoryHistoryModel>> getLogs(@PathVariable UUID productId) {
         List<InventoryHistoryModel> logs = inventoryHistoryService.getHistoryByProductId(productId);
-        return new ApiResponse<>(true, "Lấy lịch sử tồn kho thành công", logs);
+        return new ApiResponse<>(EnumCode.INVENTORY_LOG_FETCHED, logs);
     }
 
     @PostMapping("/reserve")
-    public ApiResponse<Void> reserveInventory(@RequestBody InventoryReservedRequest request) {
+    public ApiResponse<Boolean> reserveInventory(@RequestBody InventoryReservedRequest request) {
         inventoryService.reserveInventory(request);
-        return new ApiResponse<>(true, "Đặt giữ nhiều sản phẩm thành công", null);
+        return new ApiResponse<>(EnumCode.INVENTORY_RESERVED, null);
     }
 
     @PostMapping("/{orderId}/confirm")
     public ApiResponse<Void> confirmInventory(@PathVariable UUID orderId) {
         inventoryService.confirmInventory(orderId);
-        return new ApiResponse<>(true, "Xác nhận giữ hàng thành công", null);
+        return new ApiResponse<>(EnumCode.INVENTORY_CONFIRMED, null);
     }
 
     @PostMapping("/{orderId}/cancel")
     public ApiResponse<Void> cancelReserveInventory(@PathVariable UUID orderId) {
         inventoryService.cancelReserveInventory(orderId);
-        return new ApiResponse<>(true, "Hủy giữ hàng thành công", null);
+        return new ApiResponse<>(EnumCode.INVENTORY_CANCELLED, null);
     }
 }

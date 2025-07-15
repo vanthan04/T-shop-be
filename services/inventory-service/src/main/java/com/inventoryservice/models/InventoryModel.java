@@ -33,4 +33,52 @@ public class InventoryModel {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+
+    public void createNewInventory(UUID productId, int changeQuantity){
+        this.inventoryId = UUID.randomUUID();
+        this.productId = productId;
+        this.quantity += changeQuantity;
+        this.reservedQuantity = 0;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void importQuantity(int changeQuantity){
+        this.quantity += changeQuantity;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public boolean canReserve(UUID productId, int quantityReserve) {
+        return this.productId.equals(productId)
+                && quantityReserve > 0
+                && this.quantity >= quantityReserve;
+    }
+
+    public void reserveInventory(int reservedQuantity){
+        this.quantity -= reservedQuantity;
+        this.reservedQuantity += reservedQuantity;
+        this.updatedAt = LocalDateTime.now();
+    }
+    public boolean canConfirm(UUID orderId, UUID productId, int quantityConfirm){
+        return this.productId.equals(productId)
+                && quantityConfirm > 0
+                && this.reservedQuantity >= quantityConfirm;
+    }
+
+    public void confirmInventory(int confirmQuantity){
+        this.reservedQuantity -= confirmQuantity;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public boolean canCancel(UUID orderId, UUID productId, int quantityCancel){
+        return this.productId.equals(productId)
+                && quantityCancel > 0
+                && this.reservedQuantity >= quantityCancel;
+    }
+
+    public void cancelInventory(int cancelQuantity){
+        this.quantity += cancelQuantity;
+        this.reservedQuantity -= cancelQuantity;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

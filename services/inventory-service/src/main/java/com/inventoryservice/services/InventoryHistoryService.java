@@ -16,11 +16,12 @@ import java.util.UUID;
 public class InventoryHistoryService {
     private final InventoryHistoryRepository inventoryHistoryRepository;
 
-    public void createHistory(InventoryModel inventory, int qty, InventoryActionType actionType, String note, UUID orderId) {
+    public void createHistory(InventoryModel inventory, int quantityChange, int reverseChange, InventoryActionType actionType, String note, UUID orderId) {
         InventoryHistoryModel history = new InventoryHistoryModel();
         history.setHistoryId(UUID.randomUUID());
         history.setInventory(inventory);
-        history.setChangeQuantity(qty);
+        history.setQuantityChange(quantityChange);
+        history.setReserveChange(reverseChange);
         history.setActionType(actionType);
         history.setOrderId(orderId);
         history.setActionDate(LocalDateTime.now());
