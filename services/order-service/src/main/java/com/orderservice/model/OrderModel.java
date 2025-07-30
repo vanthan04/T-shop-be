@@ -1,12 +1,14 @@
 package com.orderservice.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.orderservice.dto.request.OrderItemRequest;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,7 +23,6 @@ public class OrderModel {
     @Column(name = "order_id")
     private UUID orderId;
 
-    //Cac truong thong tin van chuyen
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
@@ -46,5 +47,39 @@ public class OrderModel {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<OrderLineModel> orderLines;
+    private List<OrderLineModel> orderLines = new ArrayList<>();
+
+
+    public void createOrder(
+            UUID orderId,
+            UUID userId,
+            String email,
+            String addressShip,
+            String phone,
+            OrderStatus orderStatus,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt,
+            List<OrderItemRequest> orderItems
+    ){
+        this.orderId = orderId;
+        this.userId = userId;
+        this.email = email;
+        this.addressShip = addressShip;
+        this.phone = phone;
+        this.status = orderStatus;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        for (OrderItemRequest orderItem : orderItems){
+            OrderLineModel orderLineModel = new OrderLineModel(this, orderItem.getProductId(), orderItem.getQuantity(), orderItem.getPrice());
+            this.orderLines.add(orderLineModel);
+        }
+    }
+
+    public void updateOrder(
+            OrderStatus orderStatus,
+            LocalDateTime updatedAt
+    ){
+        this.status = orderStatus;
+        this.updatedAt = updatedAt;
+    }
 }

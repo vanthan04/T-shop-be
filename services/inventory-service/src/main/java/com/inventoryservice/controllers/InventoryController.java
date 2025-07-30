@@ -5,9 +5,8 @@ import com.inventoryservice.dto.request.InventoryManualUpdatedRequest;
 import com.inventoryservice.dto.request.InventoryReservedRequest;
 import com.inventoryservice.dto.response.ApiResponse;
 import com.inventoryservice.dto.response.EnumCode;
-import com.inventoryservice.models.InventoryHistoryModel;
-import com.inventoryservice.models.InventoryModel;
-import com.inventoryservice.services.InventoryHistoryService;
+import com.inventoryservice.models.InventoryHistory;
+import com.inventoryservice.models.Inventory;
 import com.inventoryservice.services.InventoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -21,23 +20,22 @@ import java.util.UUID;
 public class InventoryController {
 
     private final InventoryService inventoryService;
-    private final InventoryHistoryService inventoryHistoryService;
 
     @PostMapping
-    public ApiResponse<InventoryModel> createOrImport(@RequestBody InventoryCreatedRequest request) {
-        InventoryModel inventory = inventoryService.createNewInventory(request);
+    public ApiResponse<Inventory> createOrImport(@RequestBody InventoryCreatedRequest request) {
+        Inventory inventory = inventoryService.createNewInventory(request);
         return new ApiResponse<>(EnumCode.INVENTORY_CREATED, inventory);
     }
 
     @GetMapping("/{productId}")
-    public ApiResponse<InventoryModel> getByProductId(@PathVariable UUID productId) {
-        InventoryModel inventory = inventoryService.getInventoryByProductId(productId);
+    public ApiResponse<Inventory> getByProductId(@PathVariable UUID productId) {
+        Inventory inventory = inventoryService.getInventoryByProductId(productId);
         return new ApiResponse<>(EnumCode.INVENTORY_FETCHED, inventory);
     }
 
     @PutMapping("/manual-update")
-    public ApiResponse<InventoryModel> manualUpdate(@RequestBody InventoryManualUpdatedRequest request) {
-        InventoryModel updated = inventoryService.updateQuantity(
+    public ApiResponse<Inventory> manualUpdate(@RequestBody InventoryManualUpdatedRequest request) {
+        Inventory updated = inventoryService.updateQuantity(
                 request.getProductId(),
                 request.getQuantity(),
                 request.getReason()
@@ -52,26 +50,26 @@ public class InventoryController {
     }
 
     @GetMapping("/logs/{productId}")
-    public ApiResponse<List<InventoryHistoryModel>> getLogs(@PathVariable UUID productId) {
-        List<InventoryHistoryModel> logs = inventoryHistoryService.getHistoryByProductId(productId);
+    public ApiResponse<List<InventoryHistory>> getLogs(@PathVariable UUID productId) {
+        List<InventoryHistory> logs = inventoryService.getHistoryByProductId(productId);
         return new ApiResponse<>(EnumCode.INVENTORY_LOG_FETCHED, logs);
     }
 
     @PostMapping("/reserve")
-    public ApiResponse<Boolean> reserveInventory(@RequestBody InventoryReservedRequest request) {
-        inventoryService.reserveInventory(request);
+    public ApiResponse<Void> reserveInventory(@RequestBody InventoryReservedRequest request) {
+        inventoryService.reserveInventoryService(request);
         return new ApiResponse<>(EnumCode.INVENTORY_RESERVED, null);
     }
 
     @PostMapping("/{orderId}/confirm")
     public ApiResponse<Void> confirmInventory(@PathVariable UUID orderId) {
-        inventoryService.confirmInventory(orderId);
+        inventoryService.confirmInventoryService(orderId);
         return new ApiResponse<>(EnumCode.INVENTORY_CONFIRMED, null);
     }
 
     @PostMapping("/{orderId}/cancel")
     public ApiResponse<Void> cancelReserveInventory(@PathVariable UUID orderId) {
-        inventoryService.cancelReserveInventory(orderId);
+        inventoryService.cancelInventoryService(orderId);
         return new ApiResponse<>(EnumCode.INVENTORY_CANCELLED, null);
     }
 }

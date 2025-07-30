@@ -2,8 +2,10 @@ package com.inventoryservice.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.inventoryservice.exception.ErrorCode;
+import lombok.Getter;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
 public class ApiResponse <T> {
     private boolean success;
     private int statusCode;

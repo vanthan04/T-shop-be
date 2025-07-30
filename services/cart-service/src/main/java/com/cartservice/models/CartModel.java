@@ -1,5 +1,7 @@
 package com.cartservice.models;
 
+import com.cartservice.exception.AppException;
+import com.cartservice.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -7,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,14 +21,45 @@ import java.util.UUID;
 public class CartModel {
 
     @Id
-    @Column(name = "user_id", nullable = false)
     private UUID userID;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL)
     @JsonManagedReference
-    private List<CartItem> items;
+    private List<CartItem> items = new ArrayList<>();
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    public CartModel(UUID userId) {
+        this.userID = userId;
+    }
+
+    public void addNewItem(UUID productId, int quantity){
+        if (quantity <=0){
+            throw new AppException(ErrorCode.CART_INVALID_ITEM_QUANTITY);
+        }
+        for(CartItem item : items){
+            if (item.getProductId().equals(productId)) {
+                item.setQuantity(item.getQuantity()+quantity);
+                return;
+            }
+        }
+        items.add(new CartItem(UUID.randomUUID(), productId, quantity));
+    }
+
+    public void removeItem(UUID productId){
+        items.removeIf(item -> item.getProductId().equals(productId));
+    }
+    public void updateQuantity(UUID productId, int quantity){
+        for (CartItem item : items){
+            if (item.getProductId().equals(productId)) {
+                if (quantity <=0){
+                    removeItem(productId);
+                } else {
+                    item.setQuantity(quantity);
+                }
+                return;
+            }
+        }
+        throw new AppException(ErrorCode.CART_PRODUCT_NOT_FOUND);
+    }
 }

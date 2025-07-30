@@ -3,202 +3,126 @@ package com.inventoryservice.services;
 import com.inventoryservice.dto.request.InventoryCreatedRequest;
 import com.inventoryservice.dto.request.InventoryReservedRequest;
 import com.inventoryservice.dto.request.OrderItem;
+import com.inventoryservice.dto.request.OrderItemInfo;
 import com.inventoryservice.exception.AppException;
 import com.inventoryservice.exception.ErrorCode;
+import com.inventoryservice.models.Inventory;
 import com.inventoryservice.models.InventoryActionType;
-import com.inventoryservice.models.InventoryHistoryModel;
-import com.inventoryservice.models.InventoryModel;
+import com.inventoryservice.models.InventoryHistory;
+import com.inventoryservice.repositories.InventoryHistoryRepository;
 import com.inventoryservice.repositories.InventoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
-    private final InventoryHistoryService inventoryHistoryService;
+    private final InventoryHistoryRepository inventoryHistoryRepository;
 
+    @Transactional
     // Tạo mới hoặc nhập thêm hàng
-    public InventoryModel createNewInventory(InventoryCreatedRequest request) {
-        Optional<InventoryModel> existed = inventoryRepository.findInventoryModelByProductId(request.getProductId());
+    public Inventory createNewInventory(InventoryCreatedRequest request) {
+        Optional<Inventory> existed = inventoryRepository.findInventoryModelByProductId(request.getProductId());
 
-        InventoryModel inventory;
-        int changeQuantity = request.getQuantity();
-
+        Inventory inventory;
         if (existed.isPresent()) {
             inventory = existed.get();
-            inventory.importQuantity(changeQuantity);
+            inventory.createOrImportInventory(inventory.getProductId(), request.getQuantity());
+
         } else {
-            inventory = new InventoryModel();
-            inventory.createNewInventory(request.getProductId(), changeQuantity);
+            inventory = new Inventory();
+            inventory.createOrImportInventory(request.getProductId(), request.getQuantity());
+
         }
+        return inventoryRepository.save(inventory);
 
-        InventoryModel saved = inventoryRepository.save(inventory);
-
-        inventoryHistoryService.createHistory(
-                saved,
-                changeQuantity,
-                0,
-                InventoryActionType.IMPORT,
-                existed.isPresent() ? "Nhập thêm hàng vào kho" : "Tạo mới kho sản phẩm",
-                null
-        );
-
-        return saved;
     }
 
-    public InventoryModel getInventoryByProductId(UUID productId) {
+    public Inventory getInventoryByProductId(UUID productId) {
         return inventoryRepository.findInventoryModelByProductId(productId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVENTORY_PRODUCT_NOT_FOUND));
     }
 
-    public InventoryModel updateQuantity(UUID productId, int newQuantity, String reason) {
-        InventoryModel inventory = getInventoryByProductId(productId);
+    public Inventory updateQuantity(UUID productId, int newQuantity, String reason) {
+        Inventory inventory = getInventoryByProductId(productId);
 
         int diff = newQuantity - inventory.getQuantity();
         inventory.setQuantity(newQuantity);
         inventory.setUpdatedAt(LocalDateTime.now());
-        InventoryModel saved = inventoryRepository.save(inventory);
 
-        inventoryHistoryService.createHistory(
-                saved,
-                diff,
-                0,
-                InventoryActionType.ADJUST,
-                reason != null ? reason : "Điều chỉnh tồn kho thủ công",
-                null
-        );
-
-        return saved;
+        return inventoryRepository.save(inventory);
     }
 
     public void deleteInventory(UUID productId) {
-        InventoryModel inventory = inventoryRepository.findInventoryModelByProductId(productId)
+        Inventory inventory = inventoryRepository.findInventoryModelByProductId(productId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVENTORY_PRODUCT_NOT_FOUND));
 
         inventoryRepository.delete(inventory);
 
-        inventoryHistoryService.createHistory(
-                inventory,
-                -inventory.getQuantity(),
-                0,
-                InventoryActionType.EXPORT,
-                "Xóa sản phẩm khỏi kho",
-                null
-        );
     }
 
 
-    /**
-     * Đặt giữ hàng: quantity -> reservedQuantity
-     */
     @Transactional
-    public void reserveInventory(InventoryReservedRequest request) {
-        if (inventoryHistoryService.isOrderExisted(request.getOrderId())) {
+    public void reserveInventoryService(InventoryReservedRequest request){
+        if (inventoryHistoryRepository.isExistedOrderInInventoryHistory(request.getOrderId())) {
             throw new AppException(ErrorCode.INVENTORY_ORDER_EXISTED);
         }
 
-        Map<UUID, InventoryModel> inventoryMap = new HashMap<>();
-
-        // Lock & kiểm tra tồn kho
-        for (OrderItem item : request.getItems()) {
-            InventoryModel inventory = inventoryRepository.findByProductIdForUpdate(item.getProductId())
-                    .orElseThrow(() -> new AppException(ErrorCode.INVENTORY_PRODUCT_NOT_FOUND));
-
-            if (!inventory.canReserve(item.getProductId(), item.getQuantity())) {
-                throw new AppException(ErrorCode.INSUFFICIENT_INVENTORY);
+        for (OrderItem item : request.getItems()){
+            Optional<Inventory> findInventory = inventoryRepository.findByProductId(item.getProductId());
+            if (findInventory.isEmpty()){
+                throw new AppException(ErrorCode.INVENTORY_PRODUCT_NOT_FOUND);
             }
-
-            inventoryMap.put(item.getProductId(), inventory);
-        }
-
-        // Cập nhật và ghi log
-        for (OrderItem item : request.getItems()) {
-            InventoryModel inventory = inventoryMap.get(item.getProductId());
-            int qty = item.getQuantity();
-
-            inventory.reserveInventory(qty);
-
+            Inventory inventory = findInventory.get();
+            inventory.reserveInventory(request.getOrderId(), item.getQuantity());
             inventoryRepository.save(inventory);
-
-            inventoryHistoryService.createHistory(
-                    inventory,
-                    -qty,
-                    qty,
-                    InventoryActionType.RESERVE,
-                    "Đặt giữ hàng",
-                    request.getOrderId()
-            );
         }
     }
 
-    /**
-     * Xác nhận giữ hàng: reservedQuantity -> giảm vĩnh viễn
-     */
     @Transactional
-    public void confirmInventory(UUID orderId) {
-        List<InventoryHistoryModel> items = inventoryHistoryService.getReserveHistoriesByOrderId(orderId);
+    public void confirmInventoryService(UUID orderId){
+        List<OrderItemInfo> items = inventoryHistoryRepository.getQuantityReserveAndInventoryByOrderId(orderId);
         if(items.isEmpty()){
-            throw new AppException(ErrorCode.INVENTORY_ORDER_NOT_FOUND);
+            throw new AppException(ErrorCode.INVENTORY_OUT_OF_STOCK);
         }
-
-        for (InventoryHistoryModel item : items) {
-            InventoryModel inventory = inventoryRepository.findByProductIdForUpdate(
-                    item.getInventory().getProductId()
-            ).orElseThrow(() -> new AppException(ErrorCode.INVENTORY_PRODUCT_NOT_FOUND));
-
-            if (!inventory.canConfirm(orderId, item.getInventory().getProductId(), item.getInventory().getQuantity())) {
-                throw new AppException(ErrorCode.INSUFFICIENT_INVENTORY);
+        Inventory inventory = items.get(0).getInventory();
+        for (OrderItemInfo item : items){
+            if (item.getActionType() != InventoryActionType.RESERVE){
+                throw new AppException(ErrorCode.INVENTORY_OUT_OF_STOCK);
             }
-
-            inventory.confirmInventory(Math.abs(item.getQuantityChange()));
-            inventoryRepository.save(inventory);
-
-            inventoryHistoryService.createHistory(
-                    inventory,
-                    0,
-                    item.getQuantityChange(),
-                    InventoryActionType.CONFIRM,
-                    "Xác nhận giữ hàng (trừ kho)",
-                    orderId
-            );
+            inventory.confirmInventory(orderId, item.getChangeQuantity());
         }
+        inventoryRepository.save(inventory);
     }
 
-    /**
-     * Hủy giữ hàng: trả lại quantity, trừ reservedQuantity
-     */
     @Transactional
-    public void cancelReserveInventory(UUID orderId) {
-        List<InventoryHistoryModel> items = inventoryHistoryService.getReserveHistoriesByOrderId(orderId);
+    public void cancelInventoryService(UUID orderId){
+        List<OrderItemInfo> items = inventoryHistoryRepository.getQuantityReserveAndInventoryByOrderId(orderId);
         if(items.isEmpty()){
-            throw new AppException(ErrorCode.INVENTORY_ORDER_NOT_FOUND);
+            throw new AppException(ErrorCode.INVENTORY_OUT_OF_STOCK);
         }
-        for (InventoryHistoryModel item : items) {
-            InventoryModel inventory = inventoryRepository.findByProductIdForUpdate(
-                    item.getInventory().getProductId()
-            ).orElseThrow(() -> new AppException(ErrorCode.INVENTORY_PRODUCT_NOT_FOUND));
-
-            if (!inventory.canCancel(orderId, item.getInventory().getProductId(), item.getInventory().getQuantity())) {
-                throw new AppException(ErrorCode.INSUFFICIENT_INVENTORY);
+        Inventory inventory = items.get(0).getInventory();
+        for (OrderItemInfo item : items){
+            if (item.getActionType() != InventoryActionType.RESERVE){
+                throw new AppException(ErrorCode.INVENTORY_OUT_OF_STOCK);
             }
-
-            inventory.cancelInventory(item.getReserveChange());
-            inventoryRepository.save(inventory);
-
-            inventoryHistoryService.createHistory(
-                    inventory,
-                    item.getReserveChange(),
-                    item.getQuantityChange(),
-                    InventoryActionType.CANCEL_RESERVE,
-                    "Hủy giữ hàng (trả lại kho)",
-                    orderId
-            );
+            inventory.cancelInventory(orderId, inventory.getQuantity());
         }
+        inventoryRepository.save(inventory);
     }
+
+    public List<InventoryHistory> getHistoryByProductId(UUID productId) {
+        Inventory inventory = getInventoryByProductId(productId);
+        return inventory.getHistories();
+    }
+
+
 }

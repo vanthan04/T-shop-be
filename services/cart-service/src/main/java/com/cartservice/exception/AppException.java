@@ -1,17 +1,18 @@
 package com.cartservice.exception;
 
-import lombok.Getter;
-
-@Getter
 public class AppException extends RuntimeException {
-    private final int statusCode;
+    private final ErrorCode errorCode;
 
-    public AppException(int statusCode, String message) {
-        super(message);
+    public AppException(ErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
+    }
 
-        if (statusCode < 100 || statusCode > 599) {
-            throw new IllegalArgumentException("Status code không hợp lệ: " + statusCode);
-        }
-        this.statusCode = statusCode;
+    public String getErrorMessage() {
+        return errorCode.getMessage();
+    }
+
+    public ErrorCode getErrorCodeEnum() {
+        return errorCode;
     }
 }

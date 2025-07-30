@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.productservice.dto.response.product.ProductResponse;
 import com.productservice.event.producer.inventory.ProductCreatedEvent;
 import com.productservice.exception.AppException;
+import com.productservice.exception.ErrorCode;
 import com.productservice.models.Product;
 import com.productservice.models.ProductType;
 import com.productservice.repositories.ProductRepository;
@@ -14,11 +15,13 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
-import java.net.URI;
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -42,11 +45,11 @@ public class ProductService {
     ) {
         // Kiểm tra loại sản phẩm tồn tại
         ProductType type = productTypeRepository.findById(typeId)
-                .orElseThrow(() -> new AppException(400, "Không tìm thấy loại sản phẩm!"));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_TYPE_NOT_FOUND));
 
         // Kiểm tra trùng tên sản phẩm
         productRepository.findByProductName(name).ifPresent(p -> {
-            throw new AppException(400, "Tên sản phẩm đã tồn tại!");
+            throw new AppException(ErrorCode.PRODUCT_NAME_ALREADY_EXISTS);
         });
 
         try {
@@ -55,14 +58,7 @@ public class ProductService {
 
             // Tạo sản phẩm mới
             Product newProduct = new Product();
-            newProduct.setProductId(UUID.randomUUID());
-            newProduct.setProductName(name);
-            newProduct.setProductDescription(description);
-            newProduct.setProductPrice(price);
-            newProduct.setImageUrls(imagesJson);
-            newProduct.setProductType(type);
-            newProduct.setCreatedAt(LocalDateTime.now());
-
+            newProduct.createProduct(UUID.randomUUID(), name, description, price, imagesJson, type);
             // Lưu vào DB
             productRepository.save(newProduct);
 
@@ -72,9 +68,10 @@ public class ProductService {
             return newProduct;
 
         } catch (JsonProcessingException e) {
-            throw new AppException(400, "Lỗi khi xử lý ảnh sản phẩm " + e.getMessage());
+            throw new AppException(ErrorCode.PRODUCT_IMAGE_PROCESSING_ERROR);
         } catch (Exception e) {
-            throw new AppException(400, "Lỗi khi tạo sản phẩm" + e.getMessage());
+            System.out.println("Lỗi khi tạo sản phẩm" + e.getMessage());
+            throw new AppException(ErrorCode.PRODUCT_CREATION_FAILED);
         }
     }
 
@@ -103,13 +100,12 @@ public class ProductService {
         }).toList();
     }
 
-
     /**
      * Get product by ID
      */
     public Product getProductById(UUID productId) {
         return productRepository.findById(productId)
-                .orElseThrow(() -> new AppException(400, "Không tìm thấy sản phẩm"));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 
     /**
@@ -123,23 +119,17 @@ public class ProductService {
             BigDecimal price,
             boolean active
     ) {
-        Product existing = getProductById(productId);
+        Product product = getProductById(productId);
 
         // Tìm ProductType theo typeId
         ProductType type = productTypeRepository.findById(typeId)
-                .orElseThrow(() -> new AppException(400, "Không tìm thấy loại sản phẩm"));
-
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_TYPE_NOT_FOUND));
         try {
-            existing.setProductType(type);
-            existing.setProductName(name);
-            existing.setProductDescription(description);
-            existing.setProductPrice(price);
-            existing.setActive(active);
-
-            return productRepository.save(existing);
-
+            product.updateProduct(type, name, description, price, active);
+            return productRepository.save(product);
         } catch (Exception e) {
-            throw new AppException(500, "Lỗi khi cập nhật sản phẩm"+ e.getMessage());
+            System.out.println("Lỗi khi cập nhật sản phẩm"+ e.getMessage());
+            throw new AppException(ErrorCode.PRODUCT_UPDATE_FAILED);
         }
     }
 
@@ -153,7 +143,7 @@ public class ProductService {
         try {
             Optional<Product> existed = productRepository.findById(productId);
             if (!existed.isPresent()){
-                throw new AppException(400, "Không tìm thấy sản phẩm để xóa!");
+                throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
             }
             Product delProduct = existed.get();
             // Lấy danh sách ảnh hiện có
@@ -167,88 +157,54 @@ public class ProductService {
             productRepository.delete(delProduct);
 
         } catch (Exception e){
-            throw new AppException(500, "Lỗi hệ thống" + e.getMessage());
+            System.out.println("Lỗi hệ thống" + e.getMessage());
+            throw new AppException(ErrorCode.PRODUCT_INTERNAL_SERVER_ERROR);
         }
     }
 
 
     @Transactional
-    public void deleteSomeImages(UUID productId, List<String> urlsToDelete) throws JsonProcessingException {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new AppException(400, "Không tìm thấy sản phẩm"));
-
-        // Lấy danh sách ảnh hiện có
-        List<String> currentUrls = objectMapper.readValue(
-                product.getImageUrls(),
-                new TypeReference<List<String>>() {}
-        );
-
-        for (String url : urlsToDelete) {
-            String publicId = extractPublicId(url);
-            boolean deleted = imageService.deleteImage(publicId);
-            if (deleted) {
-                System.out.println("Deleted: " + publicId);
-                currentUrls.remove(url);
-            } else {
-                System.out.println("Không xoá được: " + publicId);
-            }
-        }
-
-
-        // Cập nhật lại imageUrls trong DB
-        String updatedJson = objectMapper.writeValueAsString(currentUrls);
-        product.setImageUrls(updatedJson);
-        productRepository.save(product);
-    }
-
-    @Transactional
-    public void addImages(UUID productId, List<String> newImageUrls) throws JsonProcessingException {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new AppException(400, "Không tìm thấy sản phẩm"));
-
-        // Lấy danh sách ảnh hiện có
-        List<String> currentUrls = objectMapper.readValue(
-                product.getImageUrls(),
-                new TypeReference<List<String>>() {}
-        );
-
-        // Thêm các ảnh mới vào danh sách
-        currentUrls.addAll(newImageUrls);
-
-        // Cập nhật lại json
-        String updatedJson = objectMapper.writeValueAsString(currentUrls);
-        product.setImageUrls(updatedJson);
-        productRepository.save(product);
-    }
-
-
-    private String extractPublicId(String url) {
+    public void deleteSomeImages(UUID productId, List<String> urlsToDelete) {
         try {
-            URI uri = new URI(url);
-            String path = uri.getPath();  // /image/upload/v1752139171/products/nokia_0.png
-            String[] parts = path.split("/");
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
-            // Tìm vị trí "upload"
-            int uploadIdx = Arrays.asList(parts).indexOf("upload");
+            // Gọi domain xử lý
+            product.deleteImages(urlsToDelete, imageService, objectMapper);
 
-            // Phần sau "upload/"
-            List<String> subParts = new ArrayList<>(Arrays.asList(parts).subList(uploadIdx + 1, parts.length));
+            // Lưu lại
+            productRepository.save(product);
 
-            // Nếu phần đầu sau upload là version kiểu "v123456789", thì loại bỏ
-            if (!subParts.isEmpty() && subParts.get(0).matches("^v\\d+$")) {
-                subParts.remove(0);
-            }
-
-            // Ghép lại các phần còn lại: ví dụ ["products", "nokia_0.png"]
-            String publicIdWithExt = String.join("/", subParts);
-
-            // Bỏ phần mở rộng (.png, .jpg...)
-            return publicIdWithExt.replaceFirst("\\.[^.]+$", "");
-
+        } catch (AppException ae) {
+            throw ae;
         } catch (Exception e) {
-            throw new AppException(500, "Extract publicId error from url: " + url);
+            throw new AppException(ErrorCode.PRODUCT_IMAGE_PROCESSING_ERROR);
         }
     }
+
+
+    @Transactional
+    public void addImages(UUID productId, MultipartFile[] files) {
+        try {
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+
+            List<String> newUrls = new ArrayList<>();
+            for (int i = 0; i < files.length; i++) {
+                String url = imageService.upload(files[i], product.getProductName(), i);
+                newUrls.add(url);
+            }
+
+            product.addImages(newUrls, objectMapper);
+            productRepository.save(product);
+
+        } catch (AppException ae) {
+            throw ae;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.PRODUCT_IMAGE_PROCESSING_ERROR);
+        }
+    }
+
 
 
 }

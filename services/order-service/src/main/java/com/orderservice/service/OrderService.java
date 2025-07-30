@@ -4,6 +4,7 @@ import com.orderservice.dto.request.OrderItemRequest;
 import com.orderservice.dto.request.OrderRequest;
 import com.orderservice.dto.response.ApiResponse;
 import com.orderservice.exception.AppException;
+import com.orderservice.exception.ErrorCode;
 import com.orderservice.feign.inventory.InventoryClient;
 import com.orderservice.feign.inventory.InventoryRequest;
 import com.orderservice.feign.payment.PaymentClient;
@@ -44,32 +45,26 @@ public class OrderService {
     public List<OrderLineModel> getDetailOrder(UUID orderId) {
         Optional<OrderModel> orderModel = orderRepository.findById(orderId);
         if (orderModel.isEmpty()){
-            throw new AppException(400, "Khong tim thay hoa don!");
+            throw new AppException(ErrorCode.ORDER_NOT_FOUND);
         }
         return orderLineRepository.findAllByOrder(orderModel.get());
     }
 
     @Transactional
-    public OrderModel creatOrder(OrderRequest orderRequest){
+    public OrderModel createOrder(OrderRequest orderRequest){
         OrderModel order = new OrderModel();
-        order.setOrderId(UUID.randomUUID());
-        order.setUserId(orderRequest.getUserInfo().getUserID());
-        order.setEmail(orderRequest.getUserInfo().getEmail());
-        order.setAddressShip(orderRequest.getUserInfo().getAddressShip());
-        order.setPhone(orderRequest.getUserInfo().getPhone());
-        order.setStatus(OrderStatus.PENDING);
-        order.setCreatedAt(LocalDateTime.now());
 
-        List<OrderLineModel> orderLines = orderRequest.getItems().stream().map(item -> {
-            OrderLineModel line = new OrderLineModel();
-            line.setOrderLineId(UUID.randomUUID());
-            line.setProductId(item.getProductId());
-            line.setQuantity(item.getQuantity());
-            line.setOrder(order);
-            return line;
-        }).toList();
-
-        order.setOrderLines(orderLines);
+        order.createOrder(
+                UUID.randomUUID(),
+                orderRequest.getUserInfo().getUserID(),
+                orderRequest.getUserInfo().getEmail(),
+                orderRequest.getUserInfo().getAddressShip(),
+                orderRequest.getUserInfo().getPhone(),
+                OrderStatus.PENDING,
+                LocalDateTime.now(),
+                LocalDateTime.now(),
+                orderRequest.getItems()
+        );
 
         return orderRepository.save(order);
     }
@@ -82,14 +77,14 @@ public class OrderService {
         // Gọi inventory service để kiểm tra và giữ hàng
         boolean inventoryReserved = inventoryClient.reserve(new InventoryRequest(orderId, request.getItems())).isSuccess();
         if (!inventoryReserved) {
-            throw new AppException(400, "Không đủ hàng trong kho");
+            throw new AppException(ErrorCode.ORDER_OUT_OF_STOCK);
         }
 
         // Neu thanh cong thi tao don hang
-        OrderModel orderModel = creatOrder(request);
+        OrderModel orderModel = createOrder(request);
 
         //Goi payment service de tra ve url thanh toan
-        ApiResponse<String> payres = paymentClient.checkout(new PaymentCreatedRequest(request.getUserInfo().getUserID(), orderId, new BigDecimal(100000)));
+        ApiResponse<String> payres = paymentClient.checkout(new PaymentCreatedRequest(request.getUserInfo().getUserID(), orderId, new BigDecimal(100000), null));
 
         System.out.println(payres);
         return orderModel;
@@ -100,10 +95,10 @@ public class OrderService {
     public OrderModel cancelOrderByOrderId(UUID orderId) {
         // Lấy đơn hàng
         OrderModel order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(404, "Không tìm thấy đơn hàng"));
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
         if (!order.getStatus().equals(OrderStatus.PENDING)) {
-            throw new AppException(400, "Chỉ đơn hàng ở trạng thái PENDING mới được hủy");
+            throw new AppException(ErrorCode.ORDER_CANNOT_CANCEL_IF_NOT_PENDING);
         }
 
         // Lấy danh sách sản phẩm để hoàn về kho
@@ -120,12 +115,10 @@ public class OrderService {
 
         boolean inventoryReturned = inventoryClient.cancelReserveInventory(orderId).isSuccess();
         if (!inventoryReturned) {
-            throw new AppException(500, "Không thể hoàn hàng về kho");
+            throw new AppException(ErrorCode.ORDER_CANNOT_RETURN_TO_INVENTORY);
         }
 
-        // Cập nhật trạng thái đơn
-        order.setStatus(OrderStatus.CANCELLED);
-        order.setUpdatedAt(LocalDateTime.now());
+        order.updateOrder(OrderStatus.CANCELLED, LocalDateTime.now());
         return orderRepository.save(order);
     }
 }

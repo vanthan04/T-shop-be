@@ -28,4 +28,11 @@ public class CartItem {
 
     @Column(name = "quantity")
     private int quantity;
+
+    public CartItem(UUID cartItemId, UUID productId, int quantity) {
+        this.cartItemId = cartItemId;
+        this.productId = productId;
+        this.quantity = quantity;
+    }
+
 }

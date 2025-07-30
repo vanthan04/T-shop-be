@@ -32,4 +32,5 @@ public class ProductType {
         this.typeId = typeId;
         this.typeName = typeName;
     }
+
 }

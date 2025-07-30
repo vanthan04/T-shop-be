@@ -1,6 +1,6 @@
-package com.orderservice.feign.payment;
+package com.notificationservice.event.consumer.payment;
 
-import com.orderservice.dto.request.OrderItemRequest;
+import com.notificationservice.dto.OrderItem;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,9 +12,11 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PaymentCreatedRequest {
+public class PaymentStatusEvent {
     private UUID userId;
+    private String fullName;
+    private String email;
     private UUID orderId;
     private BigDecimal totalAmount;
-    private List<OrderItemRequest> items;
+    private List<OrderItem> items;
 }

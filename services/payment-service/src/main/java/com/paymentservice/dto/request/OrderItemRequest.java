@@ -1,11 +1,11 @@
-package com.orderservice.dto.request;
+package com.paymentservice.dto.request;
 
-import lombok.Data;
+import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
-@Data
+@Getter
 public class OrderItemRequest {
     private UUID productId;
     private String productName;

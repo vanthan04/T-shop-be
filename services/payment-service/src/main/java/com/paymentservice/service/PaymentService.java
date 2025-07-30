@@ -12,14 +12,14 @@ public class PaymentService {
     private final KafkaTemplate<String, PaymentStatusEvent> kafkaTemplate;
 
     public String createUrlToPayment(PaymentCreatedRequest request){
-        return "Chuoi de thanh toan";
+        return "Chuoi de thanh toan: " + request.getUserId() + request.getOrderId() + request.getTotalAmount();
     }
 
-    public void isSuccess() {
-        kafkaTemplate.send("payment-success", new PaymentStatusEvent(true));
+    public void isSuccess(PaymentCreatedRequest request) {
+        kafkaTemplate.send("payment-success", new PaymentStatusEvent(request));
     }
 
-    public void isFailed() {
-        kafkaTemplate.send("payment-failed", new PaymentStatusEvent(false));
+    public void isFailed(PaymentCreatedRequest request) {
+        kafkaTemplate.send("payment-failed", new PaymentStatusEvent(request));
     }
 }

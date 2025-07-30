@@ -1,8 +1,10 @@
 package com.productservice.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.productservice.dto.request.product.CreateProductRequest;
 import com.productservice.dto.request.product.UpdateProductRequest;
 import com.productservice.dto.response.ApiResponse;
+import com.productservice.dto.response.EnumCode;
 import com.productservice.dto.response.product.ProductResponse;
 import com.productservice.models.Product;
 import com.productservice.services.ImageService;
@@ -43,7 +45,7 @@ public class ProductController {
                 urls
         );
 
-        return new ApiResponse<>(true, "Thanh cong", saved);
+        return new ApiResponse<>(EnumCode.PRODUCT_CREATED, saved);
     }
 
     @PutMapping("/{productId}")
@@ -59,25 +61,25 @@ public class ProductController {
                 req.getProductPrice(),
                 req.isActive()
         );
-        return new ApiResponse<>(true, "Cập nhật thành công", updated);
+        return new ApiResponse<>(EnumCode.PRODUCT_UPDATED, updated);
     }
 
     @DeleteMapping("/{productId}")
     public ApiResponse<Void> deleteProduct(@PathVariable UUID productId) {
         productService.deleteProduct(productId);
-        return new ApiResponse<>(true, "Xoá thành công", null);
+        return new ApiResponse<>(EnumCode.PRODUCT_DELETED, null);
     }
 
     @GetMapping("/{productId}")
     public ApiResponse<Product> getProductById(@PathVariable UUID productId) {
         Product product = productService.getProductById(productId);
-        return new ApiResponse<>(true, "Lấy thành công", product);
+        return new ApiResponse<>(EnumCode.PRODUCT_FETCHED, product);
     }
 
     @GetMapping
     public ApiResponse<List<ProductResponse>> getAllProducts() {
         List<ProductResponse> products = productService.getAllProducts();
-        return new ApiResponse<>(true, "Lấy danh sách thành công", products);
+        return new ApiResponse<>(EnumCode.PRODUCT_FETCHED, products);
     }
 
     /**
@@ -87,13 +89,9 @@ public class ProductController {
     public ApiResponse<String> deleteProductImages(
             @PathVariable UUID productId,
             @RequestBody List<String> urlsToDelete
-    ) {
-        try {
+    ) throws JsonProcessingException {
             productService.deleteSomeImages(productId, urlsToDelete);
-            return new ApiResponse<>(true, "Xoá ảnh thành công", null);
-        } catch (Exception e) {
-            return new ApiResponse<>(false, "Lỗi khi xoá ảnh: " + e.getMessage(), null);
-        }
+            return new ApiResponse<>(EnumCode.PRODUCT_IMAGE_DELETED, null);
     }
 
 
@@ -105,18 +103,9 @@ public class ProductController {
             @PathVariable UUID productId,
             @RequestPart("files") MultipartFile[] files
     ) {
-        Product existed = productService.getProductById(productId);
-        try {
-            List<String> urls = new ArrayList<>();
-            for (int i = 0; i < files.length; i++) {
-                String url = imageService.upload(files[i], existed.getProductName() , i);
-                urls.add(url);
-            }
-            productService.addImages(productId, urls);
-            return new ApiResponse<>(true, "Thêm ảnh thành công", null);
-        } catch (Exception e) {
-            return new ApiResponse<>(false, "Lỗi khi thêm ảnh: " + e.getMessage(), null);
-        }
+        productService.addImages(productId, files);
+        return new ApiResponse<>(EnumCode.PRODUCT_IMAGE_ADDED, null);
     }
+
 
 }

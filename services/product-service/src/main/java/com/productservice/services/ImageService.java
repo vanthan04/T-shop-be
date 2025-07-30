@@ -3,6 +3,7 @@ package com.productservice.services;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.productservice.exception.AppException;
+import com.productservice.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,7 +32,7 @@ public class ImageService {
 
             return (String) result.get("secure_url");
         } catch (IOException e) {
-            throw new AppException(400, "Upload failed: " + e.getMessage());
+            throw new AppException(ErrorCode.PRODUCT_IMAGE_UPLOAD_FAILED);
         }
     }
 
@@ -41,7 +42,8 @@ public class ImageService {
             String status = (String) result.get("result");
             return "ok".equals(status);
         } catch (IOException e) {
-            throw new AppException(500, "Xoá ảnh thất bại: " + publicId + e.getMessage());
+            System.out.println("Xoá ảnh thất bại: " + publicId + e.getMessage());
+            throw new AppException(ErrorCode.PRODUCT_IMAGE_DELETE_FAILED);
         }
     }
 

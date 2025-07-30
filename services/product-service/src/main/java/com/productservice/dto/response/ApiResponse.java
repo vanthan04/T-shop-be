@@ -1,17 +1,29 @@
 package com.productservice.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.productservice.exception.ErrorCode;
+import lombok.Getter;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
 public class ApiResponse <T> {
     private boolean success;
+    private int statusCode;
     private String message;
-    private T data;
+    private T dataResponse;
 
+    public ApiResponse(ErrorCode errorCode){
+        this.success = false;
+        this.statusCode = errorCode.getStatusCode();
+        this.message = errorCode.getMessage();
+        this.dataResponse = null;
+    }
+
+    public ApiResponse(EnumCode enumCode, T dataResponse){
+        this.success = true;
+        this.statusCode = enumCode.getStatusCode();
+        this.message = enumCode.getMessage();
+        this.dataResponse = dataResponse;
+    }
 }
+

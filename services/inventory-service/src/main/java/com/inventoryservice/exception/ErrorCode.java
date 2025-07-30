@@ -7,7 +7,7 @@ public enum ErrorCode {
     INVENTORY_PRODUCT_NOT_FOUND(1352,"Product not found"),
     INVENTORY_OUT_OF_STOCK(1353,"Not enough stock for product"),
     INSUFFICIENT_INVENTORY(1354, "Insufficient inventory for product"),
-    INVENTORY_INTERNAL_SERVER_ERROR(1304,"Internal server error");
+    INVENTORY_INTERNAL_SERVER_ERROR(1399,"Internal server error");
 
     private final int statusCode;
     private final String message;

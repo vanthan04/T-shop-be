@@ -2,6 +2,7 @@ package com.orderservice.controller;
 
 import com.orderservice.dto.request.OrderRequest;
 import com.orderservice.dto.response.ApiResponse;
+import com.orderservice.dto.response.EnumCode;
 import com.orderservice.model.OrderLineModel;
 import com.orderservice.model.OrderModel;
 import com.orderservice.service.OrderService;
@@ -21,30 +22,29 @@ public class OrderController {
     @GetMapping()
     public ApiResponse<List<OrderModel>> getAllOrders(){
         List<OrderModel> orderList = orderService.getAllOrders();
-        return new ApiResponse<>(true, "Lay danh sach don hang thanh cong", orderList);
+        return new ApiResponse<>(EnumCode.GET_ALL_ORDERS_SUCCESS, orderList);
     }
     @PostMapping("")
     public ApiResponse<OrderModel> createOrder(@RequestBody OrderRequest request) {
-        OrderModel order =  orderService.checkoutOrder(request);
-        return new ApiResponse<>(true, "Tạo đơn hàng thành công", order) ;
+        OrderModel order = orderService.checkoutOrder(request);
+        return new ApiResponse<>(EnumCode.CREATE_ORDER_SUCCESS, order) ;
     }
 
-    //Xem lich su don hang cua nguoi dung
     @GetMapping("/user/{userId}")
     public ApiResponse<List<OrderModel>> getAllOrdersByUserId(@PathVariable UUID userId){
         List<OrderModel> orderList = orderService.getAllOrdersByUserId(userId);
-        return new ApiResponse<>(true, "Lay danh sach don hang cua nguoi dung thanh cong", orderList);
+        return new ApiResponse<>(EnumCode.GET_ALL_ORDERS_SUCCESS, orderList);
     }
 
     @GetMapping("/detail/{orderId}")
     public ApiResponse<List<OrderLineModel>> getDetailOrder(@PathVariable UUID orderId){
         List<OrderLineModel> orderLineModels = orderService.getDetailOrder(orderId);
-        return new ApiResponse<>(true, "Lay thong tin chi tiet don hang", orderLineModels);
+        return new ApiResponse<>(EnumCode.GET_ORDER_DETAIL_SUCCESS, orderLineModels);
     }
 
     @PatchMapping("/{orderId}/cancel")
     public ApiResponse<OrderModel> cancelOrderByOrderId(@PathVariable UUID orderId){
         OrderModel orderModel = orderService.cancelOrderByOrderId(orderId);
-        return new ApiResponse<>(true, "Huy don hang thanh cong", orderModel);
+        return new ApiResponse<>(EnumCode.CANCEL_ORDER_SUCCESS, orderModel);
     }
 }

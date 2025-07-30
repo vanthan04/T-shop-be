@@ -2,6 +2,7 @@ package com.paymentservice.controller;
 
 import com.paymentservice.dto.request.PaymentCreatedRequest;
 import com.paymentservice.dto.response.ApiResponse;
+import com.paymentservice.dto.response.EnumCode;
 import com.paymentservice.service.PaymentService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,27 +19,27 @@ public class PaymentController {
 
 
     @PostMapping("/success")
-    public ApiResponse<Void> isSuccess(){
-        paymentService.isSuccess();
-        return new ApiResponse<>(true, "Thanh cong", null);
+    public ApiResponse<Void> isSuccess(@RequestBody PaymentCreatedRequest request){
+        paymentService.isSuccess(request);
+        return new ApiResponse<>(EnumCode.PAYMENT_SUCCESS, null);
     }
 
     @PostMapping("/failed")
-    public boolean isFailed(){
-        paymentService.isFailed();
-        return false;
+    public ApiResponse<Void> isFailed(@RequestBody PaymentCreatedRequest request){
+        paymentService.isFailed(request);
+        return new ApiResponse<>(EnumCode.PAYMENT_FAILED, null);
     }
 
     @PostMapping("/checkout")
     public ApiResponse<String> urlCheckout(@RequestBody PaymentCreatedRequest request){
-        System.out.println(request);
-        return new ApiResponse<>(true, "Chuoi thanh toan", "hehehehehehe");
+        String urlPayment = paymentService.createUrlToPayment(request);
+        return new ApiResponse<>(EnumCode.PAYMENT_URL, urlPayment);
     }
 
     @PostMapping("/refund")
     public ApiResponse<String> refund(@RequestBody String text){
         System.out.println(text);
-        return new ApiResponse<>(true, "Tra hang", "Tra hang nhe");
+        return new ApiResponse<>(EnumCode.PAYMENT_REFUND, "Tra hang nhe");
     }
 
 }

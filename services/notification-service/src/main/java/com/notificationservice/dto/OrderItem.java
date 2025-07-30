@@ -1,12 +1,12 @@
-package com.orderservice.dto.request;
+package com.notificationservice.dto;
 
-import lombok.Data;
+import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
-@Data
-public class OrderItemRequest {
+@Getter
+public class OrderItem {
     private UUID productId;
     private String productName;
     private int quantity;

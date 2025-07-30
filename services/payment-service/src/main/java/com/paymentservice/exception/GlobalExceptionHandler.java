@@ -1,6 +1,7 @@
 package com.paymentservice.exception;
 
 import com.paymentservice.dto.response.ApiResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -11,26 +12,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<?>> handleAppException(AppException ex) {
         return ResponseEntity
-                .status(ex.getStatusCode())
-                .body(new ApiResponse<>(
-                        false,
-                        ex.getMessage(),
-                        null
-                ));
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(ex.getErrorCodeEnum()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleOther(Exception ex) {
         ex.printStackTrace(); // log lỗi để debug
 
-        // bọc tất cả exception ngoài ý muốn thành AppException
-        AppException appEx = new AppException(500, "Lỗi hệ thống: " + ex.getMessage());
         return ResponseEntity
-                .status(appEx.getStatusCode())
-                .body(new ApiResponse<>(
-                        false,
-                        appEx.getMessage(),
-                        null
-                ));
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(ErrorCode.PAYMENT_INTERNAL_SERVER_ERROR));
     }
 }
