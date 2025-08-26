@@ -1,8 +1,6 @@
 package com.productservice.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.productservice.exception.AppException;
 import com.productservice.exception.ErrorCode;
 import com.productservice.services.ImageService;
@@ -10,14 +8,13 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Data
 @AllArgsConstructor
@@ -42,8 +39,12 @@ public class Product {
     @Column(name = "active", nullable = false, columnDefinition = "boolean default true")
     private boolean active = true;
 
-    @Column(name = "image_urls", columnDefinition = "TEXT")
-    private String imageUrls;
+    @Column(name = "image_urls")
+    private List<String> imageUrls = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> productAttributes;
 
     @ManyToOne
     @JsonBackReference
@@ -58,7 +59,8 @@ public class Product {
             String name,
             String description,
             BigDecimal price,
-            String imageUrls,
+            Map<String, Object> productAttributes,
+            List<String> imageUrls,
             ProductType productType
     ){
         this.productId = productId;
@@ -67,7 +69,8 @@ public class Product {
         this.productPrice = price;
         this.active = true;
         this.imageUrls = imageUrls;
-        this.productType=productType;
+        this.productAttributes = productAttributes;
+        this.productType = productType;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -84,21 +87,9 @@ public class Product {
         this.active = active;
     }
 
-    public void addImages(List<String> newUrls, ObjectMapper objectMapper) {
+    public void addImages(List<String> newUrls) {
         try {
-            List<String> currentUrls = new ArrayList<>();
-
-            if (this.imageUrls != null && !this.imageUrls.isBlank()) {
-                currentUrls = objectMapper.readValue(
-                        this.imageUrls,
-                        new TypeReference<List<String>>() {}
-                );
-            }
-
-            currentUrls.addAll(newUrls);
-
-            String updatedJson = objectMapper.writeValueAsString(currentUrls);
-            this.setImageUrls(updatedJson);
+            this.imageUrls.addAll(newUrls);
 
         } catch (Exception e) {
             throw new AppException(ErrorCode.PRODUCT_IMAGE_PROCESSING_ERROR);
@@ -106,30 +97,19 @@ public class Product {
     }
 
     // Trong class Product.java
-    public void deleteImages(List<String> urlsToDelete, ImageService imageService, ObjectMapper objectMapper) {
+    public void deleteImages(List<String> urlsToDelete, ImageService imageService) {
         try {
-            List<String> currentUrls = new ArrayList<>();
-
-            if (this.imageUrls != null && !this.imageUrls.isBlank()) {
-                currentUrls = objectMapper.readValue(
-                        this.imageUrls,
-                        new TypeReference<List<String>>() {}
-                );
-            }
 
             for (String url : urlsToDelete) {
                 String publicId = extractPublicId(url);
                 boolean deleted = imageService.deleteImage(publicId);
 
                 if (deleted) {
-                    currentUrls.remove(url);
+                    this.imageUrls.remove(url);
                 } else {
                     throw new AppException(ErrorCode.PRODUCT_IMAGE_DELETE_FAILED);
                 }
             }
-
-            String updatedJson = objectMapper.writeValueAsString(currentUrls);
-            this.setImageUrls(updatedJson);
 
         } catch (AppException ae) {
             throw ae;

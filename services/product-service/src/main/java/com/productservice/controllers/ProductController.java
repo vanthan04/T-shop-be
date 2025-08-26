@@ -42,6 +42,7 @@ public class ProductController {
                 request.getProductName(),
                 request.getProductDescription(),
                 request.getProductPrice(),
+                request.getProductAttributes(),
                 urls
         );
 

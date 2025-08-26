@@ -1,7 +1,5 @@
 package com.productservice.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.productservice.dto.response.product.ProductResponse;
 import com.productservice.event.producer.inventory.ProductCreatedEvent;
@@ -18,10 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
@@ -41,6 +36,7 @@ public class ProductService {
             String name,
             String description,
             BigDecimal price,
+            Map<String, Object> productAttributes,
             List<String> imageUrls
     ) {
         // Kiểm tra loại sản phẩm tồn tại
@@ -53,12 +49,9 @@ public class ProductService {
         });
 
         try {
-            // Convert imageUrls -> JSON string
-            String imagesJson = objectMapper.writeValueAsString(imageUrls);
-
             // Tạo sản phẩm mới
             Product newProduct = new Product();
-            newProduct.createProduct(UUID.randomUUID(), name, description, price, imagesJson, type);
+            newProduct.createProduct(UUID.randomUUID(), name, description, price, productAttributes, imageUrls, type);
             // Lưu vào DB
             productRepository.save(newProduct);
 
@@ -67,8 +60,6 @@ public class ProductService {
 
             return newProduct;
 
-        } catch (JsonProcessingException e) {
-            throw new AppException(ErrorCode.PRODUCT_IMAGE_PROCESSING_ERROR);
         } catch (Exception e) {
             System.out.println("Lỗi khi tạo sản phẩm" + e.getMessage());
             throw new AppException(ErrorCode.PRODUCT_CREATION_FAILED);
@@ -88,11 +79,8 @@ public class ProductService {
             dto.setProductName(product.getProductName());
             dto.setProductDescription(product.getProductDescription());
             dto.setProductPrice(product.getProductPrice());
-            try {
-                dto.setImageUrls(objectMapper.readValue(product.getImageUrls(), new TypeReference<List<String>>() {}));
-            } catch (Exception e) {
-                dto.setImageUrls(List.of());
-            }
+            dto.setImageUrls(product.getImageUrls());
+            dto.setProductAttributes(product.getProductAttributes());
             dto.setTypeId(product.getProductType() != null ? product.getProductType().getTypeId() : null);
             dto.setTypeName(product.getProductType() != null ? product.getProductType().getTypeName() : null);
 
@@ -142,15 +130,12 @@ public class ProductService {
     public void deleteProduct(UUID productId) {
         try {
             Optional<Product> existed = productRepository.findById(productId);
-            if (!existed.isPresent()){
+            if (existed.isEmpty()){
                 throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
             }
             Product delProduct = existed.get();
             // Lấy danh sách ảnh hiện có
-            List<String> currentUrls = objectMapper.readValue(
-                    delProduct.getImageUrls(),
-                    new TypeReference<List<String>>() {}
-            );
+            List<String> currentUrls = delProduct.getImageUrls();
 
             deleteSomeImages(delProduct.getProductId(), currentUrls);
 
@@ -170,7 +155,7 @@ public class ProductService {
                     .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
             // Gọi domain xử lý
-            product.deleteImages(urlsToDelete, imageService, objectMapper);
+            product.deleteImages(urlsToDelete, imageService);
 
             // Lưu lại
             productRepository.save(product);
@@ -195,7 +180,7 @@ public class ProductService {
                 newUrls.add(url);
             }
 
-            product.addImages(newUrls, objectMapper);
+            product.addImages(newUrls);
             productRepository.save(product);
 
         } catch (AppException ae) {

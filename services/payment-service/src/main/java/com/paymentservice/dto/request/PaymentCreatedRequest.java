@@ -1,12 +1,12 @@
 package com.paymentservice.dto.request;
 
-import lombok.Data;
+import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-@Data
+@Getter
 public class PaymentCreatedRequest {
     private UUID userId;
     private String fullName;
