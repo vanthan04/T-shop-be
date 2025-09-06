@@ -10,6 +10,6 @@ RUN mvn -B -DskipTests clean package
 
 #Run stage
 FROM openjdk:17-oracle AS run
-COPY --from=build /app/target/*.jar /run/app.jar
-EXPOSE 8004
-ENTRYPOINT ["java", "-jar", "/run/app.jar"]
+COPY --from=build /app/target/*.jar /run/order.jar
+EXPOSE 8002
+ENTRYPOINT ["java", "-jar", "/run/order.jar"]

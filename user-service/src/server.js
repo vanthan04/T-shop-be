@@ -43,7 +43,7 @@ app.use(errorHandler);
             console.log(`🚀 Auth Service running at http://localhost:${port}`);
         });
 
-        require('../eureka-client');
+        require('./eureka-client');
 
     } catch (error) {
         console.error("❌ Unable to connect to the database:", error.message);
