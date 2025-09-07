@@ -1,0 +1,25 @@
+
+name: CI/CD initial
+
+on:
+   workflow_dispatch:  
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [gateway, product, inventory, cart, user, order, notification, payment]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+    - name: Start discovery server
+      run: mvn -B package --file discovery-server/pom.xml
+      
+    # - name: Build other services
+    #   run: mvn -B package --file pom.xml
