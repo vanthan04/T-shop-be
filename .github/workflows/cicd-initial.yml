@@ -2,7 +2,7 @@
 name: CI/CD initial
 
 on:
-   workflow_dispatch:  
+   push:  
 
 jobs:
   build:
