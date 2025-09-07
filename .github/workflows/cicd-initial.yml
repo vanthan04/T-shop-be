@@ -5,7 +5,7 @@ on:
     branches:
       - initial
 jobs:
-  build-discovery:
+  discovery:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5.0.0
@@ -19,11 +19,11 @@ jobs:
         run: mvn -B -DskipTests clean package -f discovery-server/pom.xml
 
   build-other-service:
-    needs: build-discovery
+    needs: discovery
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [gateway, product, inventory, cart, user, order, notification, payment]
+        service: [product, inventory, cart, order, notification, payment]
     steps:
       - uses: actions/checkout@v5.0.0
       - name: Set up JDK 17
