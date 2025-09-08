@@ -41,6 +41,7 @@ jobs:
           node-version: '20'
       - name: start service
         run: |
+          cd user-service
           npm install
           npm start
     
