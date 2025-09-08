@@ -2,7 +2,6 @@ spring:
   application:
     name: discovery-server
 
-
   cloud:
     config:
       enabled=false:
