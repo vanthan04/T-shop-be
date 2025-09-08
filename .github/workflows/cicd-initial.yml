@@ -43,7 +43,7 @@ jobs:
         run: |
           cd user-service
           npm install
-          npm run build
+          npm run dev
     
   build-other-service:
     needs: discovery
