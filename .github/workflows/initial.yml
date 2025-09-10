@@ -26,7 +26,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: discovery-server/Dockerfile
+          context: discovery-server
           push: true
           tags: ${{vars.DOCKERHUB_USERNAME}}/discovery-server:latest
 
@@ -50,7 +50,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: user-service/Dockerfile
+          context: user-service
           push: true
           tags: ${{vars.DOCKERHUB_USERNAME}}/user-service:latest
 
@@ -76,7 +76,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ${{matrix.service}}/Dockerfile
+          context: ${{matrix.service}}
           push: true
           tags: ${{vars.DOCKERHUB_USERNAME}}/${{matrix.service}}:latest
 
