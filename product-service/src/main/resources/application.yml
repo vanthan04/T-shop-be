@@ -1,11 +1,11 @@
 server:
-  port: 8004
+  port: ${SERVICE_PORT}
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5555/product_service
-    username: postgres
-    password: 1234
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -14,11 +14,10 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   application:
-    name: product-service
-
+    name: ${SERVICE_NAME}
 
   kafka:
-    bootstrap-servers: localhost:29092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -29,14 +28,11 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
   instance:
     prefer-ip-address: true
-    ip-address: 127.0.0.1
-
 
 cloudinary:
-  cloud_name: dfruwhu2f
-  api_key: 319338817255964
-  api_secret: DsNjd_fHnxcw8-BwdeHKwfvErn4
-
+  cloud_name: ${CLOUDINARY_CLOUD_NAME}
+  api_key: ${CLOUDINARY_API_KEY}
+  api_secret: ${CLOUDINARY_API_SECRET}

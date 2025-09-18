@@ -8,9 +8,9 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="cart-service" />
+        <module name="payment-service" />
         <module name="discovery-server" />
         <module name="inventory-service" />
-        <module name="payment-service" />
         <module name="api-gateway" />
         <module name="order-service" />
         <module name="notification-service" />
@@ -25,29 +25,17 @@
         <module name="product-service" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="admin-service" target="17" />
-      <module name="config-server" target="17" />
-      <module name="customer-service" target="17" />
-      <module name="identity-service" target="17" />
-      <module name="promotion-service" target="17" />
-    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="admin-service" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
       <module name="cart-service" options="-parameters" />
-      <module name="config-server" options="-parameters" />
-      <module name="customer-service" options="-parameters" />
       <module name="discovery-server" options="-parameters" />
-      <module name="identity-service" options="-parameters" />
       <module name="inventory-service" options="-parameters" />
       <module name="notification-service" options="-parameters" />
       <module name="order-service" options="-parameters" />
       <module name="payment-service" options="-parameters" />
       <module name="product-service" options="-parameters" />
-      <module name="promotion-service" options="-parameters" />
     </option>
   </component>
 </project>

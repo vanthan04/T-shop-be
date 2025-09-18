@@ -46,7 +46,7 @@
 
     <p>Xin chào ${user.firstName!user.username},</p>
 
-    <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản T-shop của bạn.</p>
+    <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản E-commerce của bạn.</p>
 
     <p>Vui lòng nhấn vào nút bên dưới để thay đổi mật khẩu:</p>
 

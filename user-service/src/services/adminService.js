@@ -2,9 +2,10 @@ const axios = require("../config/axiosInstance")
 require("dotenv").config()
 const UserInfo = require("../models/userModel")
 const {sendUserCreatedEvent} = require("../event/UserCreatedEvent");
+const url = require("node:url");
 
 
-const getAminToken = async () => {
+const getAdminToken = async () => {
     try {
         const response = await axios.post(
             `/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/token`,
@@ -236,8 +237,24 @@ const setPassword = async (adminToken, userId, password) => {
 
 }
 
+const checkEmptyUser = async (username) => {
+    const adminToken = await getAdminToken(); // sửa tên hàm
+    const listUsersRes = await axios.get(
+        `/admin/realms/${process.env.KEYCLOAK_REALM}/users`,
+        {
+            headers: {
+                Authorization: `Bearer ${adminToken}`,
+            },
+        }
+    );
+    const listUsers = listUsersRes?.data || [];
+    const exists = listUsers.some((user) => user?.username === username);
+    return !exists; 
+};
+
 module.exports = {
-    getAminToken,
+    getAdminToken,
     createNewUser,
-    send_verify_email
+    send_verify_email,
+    checkEmptyUser
 }

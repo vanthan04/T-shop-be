@@ -2,13 +2,12 @@ spring:
   application:
     name: discovery-server
 
-
   cloud:
     config:
       enabled=false:
 eureka:
   instance:
-    hostname: localhost
+    hostname: ${EUREKA_HOSTNAME}
   client:
     registerWithEureka: false
     fetchRegistry: false
@@ -16,4 +15,4 @@ eureka:
       defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
 
 server:
-  port: 8761
+  port: ${SERVICE_PORT}

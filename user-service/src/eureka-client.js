@@ -1,13 +1,12 @@
 const Eureka = require('eureka-js-client').Eureka;
 
-// Configure Eureka client
 const client = new Eureka({
     instance: {
         app: 'USER-SERVICE',
-        hostName: 'localhost',
-        ipAddr: '127.0.0.1',
+        hostName: process.env.SERVICE_HOST,
+        ipAddr: process.env.SERVICE_HOST,
         port: {
-            '$': 8001,
+            '$': process.env.SERVER_PORT,
             '@enabled': 'true',
         },
         vipAddress: 'USER-SERVICE',
@@ -18,8 +17,8 @@ const client = new Eureka({
         preferIpAddress: true
     },
     eureka: {
-        host: 'localhost',
-        port: 8761,
+        host: process.env.EUREKA_HOST,
+        port: process.env.EUREKA_PORT,
         servicePath: '/eureka/apps/',
     }
 });

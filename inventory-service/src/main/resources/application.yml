@@ -1,20 +1,21 @@
+server:
+  port: ${SERVICE_PORT}
+
 spring:
+  application:
+    name: ${SERVICE_NAME}
   datasource:
-    url: jdbc:postgresql://localhost:5555/inventory_service
-    username: postgres
-    password: 1234
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
       ddl-auto: update
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-
-  application:
-    name: inventory-service
 
   kafka:
-    bootstrap-servers: localhost:29092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     template:
       default-topic: inventory-topic
 
@@ -29,13 +30,9 @@ spring:
     admin:
       auto-create: true
 
-server:
-  port: 8003
-
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
   instance:
     prefer-ip-address: true
-    ip-address: 127.0.0.1

@@ -1,3 +1,4 @@
+.github/
 .env
-.idea
+.idea/
 keycloak-config/config/
