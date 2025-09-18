@@ -14,7 +14,7 @@ const register = async (req, res, next) => {
             });
         }
 
-        const adminToken = await adminService.getAminToken();
+        const adminToken = await adminService.getAdminToken();
         const userInfo = {
             username,
             email,
@@ -46,6 +46,15 @@ const login = async (req, res, next) => {
                 dataResponse: null
             });
         }
+        //Check nguoi dung co ton tai chua
+        const isEmptyUser = await adminService.checkEmptyUser(username);
+        if (isEmptyUser) {
+            return res.status(400).json({
+                success: false,
+                message: "Username does not exist!",
+                dataResponse: null
+            });
+        }
 
         const tokenResponse = await axios.post(
             `/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/token`,
@@ -58,13 +67,12 @@ const login = async (req, res, next) => {
             }),
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
-
-        const accessToken = tokenResponse.data.access_token;
+        const accessToken = tokenResponse?.data?.access_token;
         const userData = jwt.decode(accessToken);
         const userId = userData.sub;
 
         if (!userData.email_verified) {
-            const adminToken = await adminService.getAminToken();
+            const adminToken = await adminService.getAdminToken();
             await adminService.send_verify_email(adminToken, userId);
             return res.status(200).json({
                 success: false,

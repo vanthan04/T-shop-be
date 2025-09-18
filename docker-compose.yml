@@ -8,8 +8,14 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    healthcheck:
+      test: pg_isready
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 15s
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pg-data:/var/lib/postgresql/data
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - microservices-net
@@ -30,6 +36,271 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: ms_keycloak
+    command:
+      - start-dev
+      - --import-realm
+      - --features=scripts
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-user_service}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HEALTH_ENABLED: true
+    healthcheck:
+      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:9000/health/live']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 120s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./keycloak-config/themes:/opt/keycloak/themes
+      - ./keycloak-config/config:/opt/keycloak/data/import
+    networks:
+      - microservices-net
+
+
+  kafka:
+    container_name: ms_kafka
+    image: confluentinc/cp-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 120s
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@ms_kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092,CONTROLLER://:9093 #container to container: 9092. host to container: 29092, controller: 9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://ms_kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      CLUSTER_ID: 9_ISia_zwGINzRvyQ
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - microservices-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: unless-stopped
+    ports:
+      - "28080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=ms_kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
+  discovery-server:
+    build:
+      context: discovery-server
+      dockerfile: Dockerfile
+    container_name: discovery-server
+    env_file:
+      - discovery-server/.env.docker
+    restart: unless-stopped
+    ports:
+      - 8761:8761
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8761" ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+    networks:
+      - microservices-net
+
+  user-service:
+    build:
+      context: user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      NODE_ENV: docker
+    env_file:
+      - user-service/.env.docker
+    ports:
+      - 8001:8001
+    networks:
+      - microservices-net
+
+  api-gateway:
+    build:
+      context: api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    env_file:
+      - api-gateway/.env.docker
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    ports:
+      - 8000:8000
+    networks:
+      - microservices-net
+
+  cart-service:
+    build:
+      context: cart-service
+      dockerfile: Dockerfile
+    container_name: cart-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    env_file:
+      - cart-service/.env.docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    ports:
+      - 8007:8007
+    networks:
+      - microservices-net
+
+  inventory-service:
+    build:
+      context: inventory-service
+      dockerfile: Dockerfile
+    container_name: inventory-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    env_file:
+      - inventory-service/.env.docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    ports:
+      - 8003:8003
+    networks:
+      - microservices-net
+
+  product-service:
+    build:
+      context: product-service
+      dockerfile: Dockerfile
+    container_name: product-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    env_file:
+      - product-service/.env.docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    ports:
+      - 8004:8004
+    networks:
+      - microservices-net
+
+  order-service:
+    build:
+      context: order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    env_file:
+      - order-service/.env.docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    ports:
+      - 8002:8002
+    networks:
+      - microservices-net
+
+  notification-service:
+    build:
+      context: notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    ports:
+      - 8005:8005
+    networks:
+      - microservices-net
+
+  payment-service:
+    build:
+      context: payment-service
+      dockerfile: Dockerfile
+    container_name: payment-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    env_file:
+      - payment-service/.env.docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    ports:
+      - 8006:8006
+    networks:
+      - microservices-net
 
 #  mongodb:
 #    container_name: ms_mongo_db
@@ -63,74 +334,8 @@ services:
 #      - mongodb
 #    networks:
 #      - microservices-net
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    container_name: ms_keycloak
-    command:
-      - start-dev
-      - --import-realm
-      - --features=scripts
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
-      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-user_service}
-      KC_DB_USERNAME: ${POSTGRES_USER}
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
-    depends_on:
-      - postgres
-    volumes:
-      - ./keycloak-config/themes:/opt/keycloak/themes
-      - ./keycloak-config/config:/opt/keycloak/data/import
-    networks:
-      - microservices-net
-
-
-  kafka:
-    container_name: ms_kafka
-    image: confluentinc/cp-kafka
-    restart: unless-stopped
-    ports:
-      - "9092:9092"
-      - "29092:29092"
-    environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@ms_kafka:9093
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092,CONTROLLER://:9093 #container to container: 9092. host to container: 29092, controller: 9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://ms_kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      CLUSTER_ID: 9_ISia_zwGINzRvyQ
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    volumes:
-      - kafka-data:/var/lib/kafka/data
-    networks:
-      - microservices-net
-
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
-    restart: unless-stopped
-    ports:
-      - "28080:8080"
-    environment:
-      - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=ms_kafka:9092
-    depends_on:
-      - kafka
-    networks:
-      - microservices-net
-
-
-
 volumes:
-  pgdata:
+  pg-data:
   pgadmin:
   kafka-data:
   mongo:

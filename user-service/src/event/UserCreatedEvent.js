@@ -1,6 +1,9 @@
 const { kafka } = require('./connectKafka');
+const { Partitioners } = require('kafkajs'); // 👈 cần import thêm
 
-const producer = kafka.producer();
+const producer = kafka.producer({
+    createPartitioner: Partitioners.LegacyPartitioner
+});
 
 const initProducer = async () => {
     await producer.connect();
@@ -19,7 +22,6 @@ const sendUserCreatedEvent = async (userId) => {
         ]
     });
 };
-
 
 module.exports = {
     initProducer,

@@ -1,14 +1,17 @@
+server:
+  port: ${SERVICE_PORT}
+
 spring:
   application:
-    name: payment-service
+    name: ${SERVICE_NAME}
   datasource:
-    url: jdbc:postgresql://localhost:5555/payment_service
-    username: postgres
-    password: 1234
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   kafka:
-    bootstrap-servers: localhost:29092
+    bootstrap-servers: kafka:29092
     template:
       default-topic: payment-topic
     producer:
@@ -19,13 +22,10 @@ spring:
 
     admin:
       auto-create: true
-server:
-  port: 8006
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://discovery-server:8761/eureka
   instance:
     prefer-ip-address: true
-    ip-address: 127.0.0.1

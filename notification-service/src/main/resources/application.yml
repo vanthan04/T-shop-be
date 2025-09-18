@@ -14,7 +14,7 @@ spring:
   application:
     name: notification-service
   kafka:
-    bootstrap-servers: localhost:29092
+    bootstrap-servers: kafka:29092
     template:
       default-topic: notification-topic
 
@@ -28,4 +28,11 @@ spring:
 
 server:
   port: 8005
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka
+  instance:
+    prefer-ip-address: true
 

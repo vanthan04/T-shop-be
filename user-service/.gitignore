@@ -1,3 +1,4 @@
+.env.dev
+.env.docker
 node_modules/
-.env
 .idea

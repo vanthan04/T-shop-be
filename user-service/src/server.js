@@ -40,7 +40,7 @@ app.use(errorHandler);
 
         // Start server sau khi DB sẵn sàng
         app.listen(port, () => {
-            console.log(`🚀 Auth Service running at http://localhost:${port}`);
+            console.log(`🚀 Auth Service running at http://${process.env.SERVER_NAME}:${port}`);
         });
 
         require('./eureka-client');

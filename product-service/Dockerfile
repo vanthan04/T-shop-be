@@ -9,7 +9,7 @@ COPY src ./src
 RUN mvn -B -DskipTests clean package
 
 #Run stage
-FROM openjdk:17-oracle AS run
+FROM eclipse-temurin:17-jre-alpine AS run
 COPY --from=build /app/target/*.jar /run/product.jar
 EXPOSE 8004
-ENTRYPOINT ["java", "-jar", "/run/product.jar"]
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Ho_Chi_Minh", "-jar", "/run/product.jar"]

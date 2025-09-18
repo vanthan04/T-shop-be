@@ -1,0 +1,49 @@
+name: update service
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      gateway: ${{ steps.change.outputs.gateway }}
+      discovery: ${{ steps.change.outputs.discovery }}
+      product: ${{ steps.change.outputs.product }}
+      inventory: ${{ steps.change.outputs.inventory }}
+      notification: ${{ steps.change.outputs.notification }}
+      order: ${{ steps.change.outputs.order }}
+      payment: ${{ steps.change.outputs.payment }}
+      cart: ${{ steps.change.outputs.cart }}
+      user: ${{ steps.change.outputs.user }}
+      other: ${{ steps.change.outputs.other }}
+    steps:
+      - uses: actions/checkout@v5.0.0
+      - run: echo "Load repository successfully!"
+      - uses: dorny/paths-filter@v3.0.2
+        id: change
+        with:
+          filters: |
+            gateway:
+              - 'api-gateway/**'
+            discovery:
+              - 'discovery-server/**'
+            product:
+              - 'product-service/**'
+            inventory:
+              - 'inventory-service/**'
+            notification:
+              - 'notification-service/**'
+            order:
+              - 'order-service/**'
+            payment:
+              - 'payment-service/**'
+            cart:
+              - 'cart-service/**'
+            user:
+              - 'user-service/**'
+      - run: echo "Services change ${{steps.change.outputs.changes}}"
+
+  build-discovery:
+

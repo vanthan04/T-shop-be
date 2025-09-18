@@ -1,0 +1,39 @@
+spring:
+  mail:
+    port: 587
+    host: smtp.gmail.com
+    username: tranvanthan170704@gmail.com
+    password: qzmm guos fctj ormw
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  application:
+    name: notification-service
+  kafka:
+    bootstrap-servers: localhost:29092
+    template:
+      default-topic: notification-topic
+
+    consumer:
+      group-id: notificationGroup
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+        spring.json.type.mapping: paymentSuccess:com.notificationservice.event.consumer.payment.PaymentStatusEvent, paymentFailed:com.notificationservice.event.consumer.payment.PaymentStatusEvent
+
+server:
+  port: 8005
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+

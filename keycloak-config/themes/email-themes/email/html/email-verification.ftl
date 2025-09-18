@@ -40,7 +40,7 @@
 
     <h2>Chào ${user.firstName!user.username},</h2>
 
-    <p>Cảm ơn bạn đã đăng ký tài khoản tại <strong>T-shop</strong>.</p>
+    <p>Cảm ơn bạn đã đăng ký tài khoản tại <strong>E-commerce</strong>.</p>
 
     <p>Vui lòng xác minh địa chỉ email của bạn bằng cách nhấn nút bên dưới:</p>
 
